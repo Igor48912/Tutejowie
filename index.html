@@ -22,13 +22,35 @@
 
         body {
             font-family: Georgia, 'Times New Roman', serif;
-            background: var(--bg);
+            background-color: #f1efea;                 /* kolor zapasowy, gdyby obrazek się nie wczytał */
+            background-image: url("t%C5%82o.png");      /* plik tło.png w tym samym folderze co index.html */
+            background-repeat: no-repeat;
+            background-position: center top;
+            background-size: cover;
+            background-attachment: scroll;             /* tło przewija się razem ze stroną */
+            min-height: 100vh;
             color: var(--ink);
             margin: 0;
             line-height: 1.7;
         }
 
         [hidden] { display: none !important; }
+
+        /* ---------- Paralaksa: tło przesuwa się wolniej niż treść (prędkość ustawiana w skrypcie na dole strony) ---------- */
+        #parallaxBg {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;                              /* wysokość ustawia skrypt */
+            z-index: -1;
+            pointer-events: none;
+            background: url("t%C5%82o.png") center top / cover no-repeat;   /* plik tło.png obok index.html */
+            will-change: transform;
+        }
+        html.parallax-on #parallaxBg { display: block; }
+        html.parallax-on body { background-image: none; }   /* przy włączonej paralaksie tło rysuje warstwa powyżej */
 
         header { background: var(--ink); color: #fff; text-align: center; padding: 2.5rem 1rem 2.2rem; }
         header h1 { margin: 0; font-size: 2.4rem; font-weight: normal; letter-spacing: 1px; }
@@ -367,6 +389,7 @@
         .sbtn.danger:hover { background: #fef3f2; border-color: #b42318; }
 
         footer { text-align: center; padding: 2rem; font-size: 0.85rem; color: #777; font-family: sans-serif; }
+        footer p { display: inline-block; margin: 0; padding: 0.35rem 1.1rem; background: rgba(255, 255, 255, 0.88); border-radius: 999px; }
         footer a { color: #98a2b3; text-decoration: none; margin-left: 0.8rem; }
         footer a:hover { color: var(--ink); text-decoration: underline; }
 
@@ -431,8 +454,9 @@
         /* osoba ze zdjęciem: duże zdjęcie wykadrowane do ramki, imię i nazwisko na zdjęciu */
         .panel-top.has-photo {
             padding: 0;
-            height: min(48vh, 360px);
-            min-height: 250px;
+            flex: none;
+            aspect-ratio: 10 / 9;
+            max-height: 60vh;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -564,7 +588,33 @@
         .photo-edit { display: flex; gap: 1rem; align-items: center; }
         .photo-prev { flex: none; width: 68px; height: 68px; border-radius: 50%; background: #eef0f3 center / cover no-repeat; border: 1px solid #cfd4dc; }
         .photo-edit .sbtn { margin: 0 0.4rem 0.3rem 0; }
-.linkbtn { background: none; border: none; padding: 0.25rem 0; margin-top: 0.2rem; font: 0.82rem sans-serif; color: var(--accent); cursor: pointer; text-decoration: underline; }
+.crop-back { z-index: 1400; }
+        .crop-modal { width: min(820px, 100%); }
+        .crop-layout { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 1.2rem; align-items: start; }
+        .crop-frame {
+            width: 100%;
+            max-width: 480px;
+            aspect-ratio: 10 / 9;
+            border: 2px solid var(--ink);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #222;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+        }
+        .crop-frame.dragging { cursor: grabbing; }
+        .crop-frame canvas { display: block; width: 100%; height: 100%; }
+        .crop-zoom { display: flex; align-items: center; gap: 0.7rem; margin-top: 0.8rem; font: 0.85rem sans-serif; color: var(--muted); max-width: 480px; }
+        .crop-zoom input { flex: 1; }
+        .crop-hint { margin: 0.6rem 0 0; font: 0.8rem/1.45 sans-serif; color: var(--muted); max-width: 480px; }
+        .crop-side { font: 0.78rem sans-serif; color: var(--muted); }
+        .crop-side p { margin: 0 0 0.3rem; }
+        .crop-side canvas { display: block; margin-bottom: 1rem; border: 1px solid #cfd4dc; background: #eee; }
+        .crop-side .prev-tile { width: 64px; height: 64px; border-radius: 50%; }
+        .crop-side .prev-card { width: 96px; height: 120px; border-radius: 8px; }
+        @media (max-width: 640px) { .crop-layout { grid-template-columns: 1fr; } }
+        .linkbtn { background: none; border: none; padding: 0.25rem 0; margin-top: 0.2rem; font: 0.82rem sans-serif; color: var(--accent); cursor: pointer; text-decoration: underline; }
         .linkbtn:hover { color: var(--accent-dark); }
         .newp { margin-top: 0.4rem; padding: 0.6rem; background: #f8f9fa; border: 1px dashed #cfd4dc; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
         .newp input { width: 100%; font: 0.88rem sans-serif; padding: 0.4rem 0.55rem; border: 1px solid #cfd4dc; border-radius: 6px; }
@@ -593,6 +643,7 @@
     </style>
 </head>
 <body>
+    <div id="parallaxBg" aria-hidden="true"></div>
 
     <header>
         <h1>Tutejowie</h1>
@@ -837,9 +888,10 @@
                                 <div class="photo-prev" id="fPhotoPrev"></div>
                                 <div>
                                     <button type="button" class="sbtn" id="fPhotoPick">Wybierz zdjęcie…</button>
+                                    <button type="button" class="sbtn" id="fPhotoCrop" hidden>Kadruj…</button>
                                     <button type="button" class="sbtn danger" id="fPhotoDel" hidden>Usuń zdjęcie</button>
                                     <input type="file" id="fPhotoFile" accept="image/*" hidden>
-                                    <small>Zdjęcie zostanie zmniejszone i zapisane w pliku dane.js. W profilu wyświetla się duże (kadrowane automatycznie do ramki), a na kafelku w kółku.</small>
+                                    <small>Po wybraniu zdjęcia ustawisz kadr w ramce. Zdjęcie jest zapisywane w pliku dane.js; w profilu wyświetla się duże, a na kafelku w kółku.</small>
                                 </div>
                             </div>
                         </div>
@@ -860,6 +912,38 @@
                     </div>
                 </form>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- OKNO KADROWANIA ZDJĘCIA -->
+    <div class="modal-back crop-back" id="cropModal" hidden>
+        <div class="modal crop-modal" role="dialog" aria-modal="true" aria-labelledby="cropTitle">
+            <div class="modal-head">
+                <h3 id="cropTitle">Kadrowanie zdjęcia</h3>
+                <button type="button" class="modal-x" id="cropClose" aria-label="Zamknij">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="crop-layout">
+                    <div>
+                        <div class="crop-frame" id="cropFrame"><canvas id="cropCanvas" width="800" height="720"></canvas></div>
+                        <label class="crop-zoom">Powiększenie
+                            <input type="range" id="cropZoom" min="100" max="400" value="100" step="1" aria-label="Powiększenie zdjęcia">
+                        </label>
+                        <p class="crop-hint">Przeciągnij zdjęcie, aby ustawić kadr. Suwak lub kółko myszy zmienia powiększenie. To, co widać w ramce, pojawi się w profilu osoby.</p>
+                    </div>
+                    <div class="crop-side">
+                        <p>Kafelek</p>
+                        <canvas id="cropPrevTile" class="prev-tile" width="128" height="128"></canvas>
+                        <p>Karta biografii</p>
+                        <canvas id="cropPrevCard" class="prev-card" width="192" height="240"></canvas>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="sbtn primary" id="cropApply">Zastosuj kadr</button>
+                    <button type="button" class="sbtn" id="cropReset">Resetuj</button>
+                    <button type="button" class="sbtn" id="cropCancel">Anuluj</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1609,8 +1693,9 @@
             fitText(yt, yt.textContent, YEAR_FONT);
 
             if (p.pdf) {                                     // ikonka pergaminu: osoba ma biografię (PDF)
-                var ic = S("g", { "class": "scroll", transform: "translate(" + (w - 23) + "," + (TH - 21) + ")" }, g);
+                var ic = S("g", { "class": "scroll", transform: "translate(10,37.5) scale(0.88)" }, g);
                 var ink = "#8a6d3b";
+                S("rect", { x: -1.5, y: -1.5, width: 22, height: 21, rx: 5, fill: "#fff", "fill-opacity": 0.92 }, ic);
                 S("rect", { x: 3, y: 3, width: 13, height: 12, fill: "#f8ebc8", stroke: ink, "stroke-width": 1 }, ic);
                 S("path", { d: "M6 7.2H13M6 9.6H13M6 12H11", stroke: ink, "stroke-width": 0.9, fill: "none", "stroke-linecap": "round" }, ic);
                 S("rect", { x: 1, y: 0.5, width: 17, height: 4.2, rx: 2.1, fill: "#e8d29a", stroke: ink, "stroke-width": 1 }, ic);
@@ -2522,41 +2607,130 @@
             var pv = $("fPhotoPrev");
             pv.style.backgroundImage = form.photo ? 'url("' + form.photo.replace(/"/g, "%22") + '")' : "none";
             $("fPhotoDel").hidden = !form.photo;
+            $("fPhotoCrop").hidden = !(form.photo && /^data:image/.test(form.photo));
             $("fPhotoPick").textContent = form.photo ? "Zmień zdjęcie…" : "Wybierz zdjęcie…";
         }
 
-        function processPhoto(file) {
+        /* ---------- narzędzie do kadrowania zdjęcia ---------- */
+        var cropBox = $("cropModal"), cropCv = $("cropCanvas"), cropFrame = $("cropFrame");
+        var crop = { img: null, s: 1, minS: 1, ox: 0, oy: 0, W: cropCv.width, H: cropCv.height, drag: null };
+
+        function cropClamp() {
+            var iw = crop.img.width * crop.s, ih = crop.img.height * crop.s;
+            crop.ox = Math.min(0, Math.max(crop.W - iw, crop.ox));
+            crop.oy = Math.min(0, Math.max(crop.H - ih, crop.oy));
+        }
+        function cropDraw() {
+            var ctx = cropCv.getContext("2d");
+            ctx.fillStyle = "#222";
+            ctx.fillRect(0, 0, crop.W, crop.H);
+            ctx.drawImage(crop.img, crop.ox, crop.oy, crop.img.width * crop.s, crop.img.height * crop.s);
+            /* podgląd: środkowy kwadrat (kafelek) i środkowy pas 4:5 (karta biografii) */
+            var t = $("cropPrevTile").getContext("2d");
+            t.clearRect(0, 0, 128, 128);
+            t.drawImage(cropCv, (crop.W - crop.H) / 2, 0, crop.H, crop.H, 0, 0, 128, 128);
+            var cw = crop.H * 0.8, c = $("cropPrevCard").getContext("2d");
+            c.clearRect(0, 0, 192, 240);
+            c.drawImage(cropCv, (crop.W - cw) / 2, 0, cw, crop.H, 0, 0, 192, 240);
+        }
+        function cropReset() {
+            var iw = crop.img.width, ih = crop.img.height;
+            crop.minS = Math.max(crop.W / iw, crop.H / ih);
+            crop.s = crop.minS;
+            crop.ox = (crop.W - iw * crop.s) / 2;
+            crop.oy = (crop.H - ih * crop.s) * 0.25;         // lekko ku górze – lepiej dla portretów
+            cropClamp();
+            $("cropZoom").value = "100";
+            cropDraw();
+        }
+        function cropZoomTo(pct) {
+            var old = crop.s, ns = crop.minS * pct / 100;
+            var cx = (crop.W / 2 - crop.ox) / old, cy = (crop.H / 2 - crop.oy) / old;   // punkt środka ramki w zdjęciu
+            crop.s = ns;
+            crop.ox = crop.W / 2 - cx * ns;
+            crop.oy = crop.H / 2 - cy * ns;
+            cropClamp();
+            cropDraw();
+        }
+        function openCropper(src) {
+            var img = new Image();
+            img.onload = function () {
+                crop.img = img;
+                cropBox.hidden = false;
+                cropReset();
+            };
+            img.onerror = function () { alert("Nie udało się odczytać tego zdjęcia."); };
+            img.src = src;
+        }
+        function closeCrop() { cropBox.hidden = true; crop.img = null; }
+
+        function startCrop(file) {
             if (!file || !/^image\//.test(file.type)) { alert("Wybierz plik graficzny (JPG, PNG lub WebP)."); return; }
             var rd = new FileReader();
-            rd.onload = function () {
-                var img = new Image();
-                img.onload = function () {
-                    /* zachowujemy proporcje, ale zmniejszamy do 720 px dłuższego boku – wystarcza na duże zdjęcie w profilu */
-                    var scale = Math.min(1, 720 / Math.max(img.width, img.height));
-                    var out = "";
-                    for (var attempt = 0; attempt < 4; attempt++) {
-                        var cw = Math.max(1, Math.round(img.width * scale)), ch = Math.max(1, Math.round(img.height * scale));
-                        var c = document.createElement("canvas");
-                        c.width = cw; c.height = ch;
-                        var ctx = c.getContext("2d");
-                        ctx.fillStyle = "#fff";
-                        ctx.fillRect(0, 0, cw, ch);
-                        ctx.drawImage(img, 0, 0, cw, ch);
-                        out = c.toDataURL("image/jpeg", attempt === 0 ? 0.82 : 0.7);
-                        if (out.length < 450000) break;
-                        scale *= 0.8;                        // zbyt duży plik – zmniejszamy jeszcze bardziej
-                    }
-                    form.photo = out;
-                    updatePhotoPrev();
-                };
-                img.onerror = function () { alert("Nie udało się odczytać tego zdjęcia."); };
-                img.src = String(rd.result);
-            };
+            rd.onload = function () { openCropper(String(rd.result)); };
             rd.readAsDataURL(file);
         }
+
+        function applyCrop() {
+            if (!crop.img) return;
+            var out = "";
+            try {
+                var scale = 1;
+                for (var i = 0; i < 4; i++) {
+                    var c = cropCv;
+                    if (scale < 1) {
+                        c = document.createElement("canvas");
+                        c.width = Math.round(crop.W * scale); c.height = Math.round(crop.H * scale);
+                        c.getContext("2d").drawImage(cropCv, 0, 0, c.width, c.height);
+                    }
+                    out = c.toDataURL("image/jpeg", i === 0 ? 0.85 : 0.7);
+                    if (out.length < 450000) break;
+                    scale *= 0.8;
+                }
+            } catch (e) {
+                alert("Tego zdjęcia nie da się przyciąć (plik zewnętrzny). Wybierz je ponownie z komputera.");
+                return;
+            }
+            form.photo = out;
+            updatePhotoPrev();
+            closeCrop();
+        }
+
+        cropFrame.addEventListener("pointerdown", function (e) {
+            if (!crop.img) return;
+            crop.drag = { x: e.clientX, y: e.clientY, ox: crop.ox, oy: crop.oy };
+            cropFrame.classList.add("dragging");
+            try { cropFrame.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        cropFrame.addEventListener("pointermove", function (e) {
+            if (!crop.drag) return;
+            var k = crop.W / cropFrame.getBoundingClientRect().width;
+            crop.ox = crop.drag.ox + (e.clientX - crop.drag.x) * k;
+            crop.oy = crop.drag.oy + (e.clientY - crop.drag.y) * k;
+            cropClamp();
+            cropDraw();
+        });
+        function cropEnd() { crop.drag = null; cropFrame.classList.remove("dragging"); }
+        cropFrame.addEventListener("pointerup", cropEnd);
+        cropFrame.addEventListener("pointercancel", cropEnd);
+        cropFrame.addEventListener("wheel", function (e) {
+            if (!crop.img) return;
+            e.preventDefault();
+            var z = $("cropZoom"), v = Math.max(100, Math.min(400, Number(z.value) * (e.deltaY < 0 ? 1.08 : 0.93)));
+            z.value = String(v);
+            cropZoomTo(v);
+        }, { passive: false });
+        $("cropZoom").addEventListener("input", function () { if (crop.img) cropZoomTo(Number(this.value)); });
+        $("cropApply").addEventListener("click", applyCrop);
+        $("cropReset").addEventListener("click", function () { if (crop.img) cropReset(); });
+        $("cropCancel").addEventListener("click", closeCrop);
+        $("cropClose").addEventListener("click", closeCrop);
+        cropBox.addEventListener("click", function (e) { if (e.target === cropBox) closeCrop(); });
+        $("fPhotoCrop").addEventListener("click", function () { if (form.photo) openCropper(form.photo); });
+
         $("fPhotoPick").addEventListener("click", function () { $("fPhotoFile").click(); });
         $("fPhotoFile").addEventListener("change", function () {
-            processPhoto(this.files && this.files[0]);
+            startCrop(this.files && this.files[0]);
             this.value = "";
         });
         $("fPhotoDel").addEventListener("click", function () { form.photo = ""; updatePhotoPrev(); });
@@ -2601,6 +2775,7 @@
 
         document.addEventListener("keydown", function (e) {
             if (e.key !== "Escape") return;
+            if (!cropBox.hidden) { closeCrop(); return; }
             if (!modal.hidden) { closeModal(); return; }
             if (panel.classList.contains("open")) {
                 if (state.bio) showBio(false); else closePanel();
@@ -2619,6 +2794,38 @@
         startView();
         updateAdminBar();
         if (location.hash === "#admin") enterAdmin();
+    })();
+    </script>
+
+    <script>
+    /* Efekt paralaksy: tło przesuwa się wolniej niż treść strony.
+       PREDKOSC: 0 = tło stoi w miejscu, 1 = tło przewija się tak samo szybko jak treść.
+       Przy ustawieniu systemowym „ogranicz ruch” (lub wyłączonym JavaScript) tło po prostu przewija się razem ze stroną. */
+    (function () {
+        var PREDKOSC = 0.4;
+        var layer = document.getElementById("parallaxBg");
+        if (!layer || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+        var root = document.documentElement, maxScroll = 0, ticking = false;
+
+        function update() {
+            ticking = false;
+            var y = Math.min(Math.max(window.pageYOffset || 0, 0), maxScroll);
+            layer.style.transform = "translate3d(0," + (-y * PREDKOSC).toFixed(1) + "px,0)";
+        }
+        function measure() {
+            var vh = window.innerHeight;
+            maxScroll = Math.max(0, Math.max(root.scrollHeight, document.body.scrollHeight) - vh);
+            layer.style.height = Math.ceil(vh + maxScroll * PREDKOSC) + "px";   // warstwa pokrywa cały zakres przewijania
+            update();
+        }
+        function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+
+        root.classList.add("parallax-on");
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", measure);
+        window.addEventListener("load", measure);
+        if (window.ResizeObserver) new ResizeObserver(measure).observe(document.body);
+        measure();
     })();
     </script>
 

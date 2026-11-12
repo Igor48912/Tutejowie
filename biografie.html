@@ -20,9 +20,31 @@
         * { box-sizing: border-box; }
         [hidden] { display: none !important; }
 
+        /* ---------- Paralaksa: tło przesuwa się wolniej niż treść (prędkość ustawiana w skrypcie na dole strony) ---------- */
+        #parallaxBg {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;                              /* wysokość ustawia skrypt */
+            z-index: -1;
+            pointer-events: none;
+            background: url("t%C5%82o.png") center top / cover no-repeat;   /* plik tło.png obok index.html */
+            will-change: transform;
+        }
+        html.parallax-on #parallaxBg { display: block; }
+        html.parallax-on body { background-image: none; }   /* przy włączonej paralaksie tło rysuje warstwa powyżej */
+
         body {
             font-family: Georgia, 'Times New Roman', serif;
-            background: var(--bg);
+            background-color: #f1efea;                 /* kolor zapasowy, gdyby obrazek się nie wczytał */
+            background-image: url("t%C5%82o.png");      /* plik tło.png w tym samym folderze co index.html */
+            background-repeat: no-repeat;
+            background-position: center top;
+            background-size: cover;
+            background-attachment: scroll;             /* tło przewija się razem ze stroną */
+            min-height: 100vh;
             color: var(--ink);
             margin: 0;
             line-height: 1.7;
@@ -129,6 +151,7 @@
         .empty-box { font-family: sans-serif; font-size: 0.92rem; color: var(--muted); padding: 1.2rem; background: #f8f9fa; border: 1px dashed #cfd4dc; border-radius: 10px; }
 
         footer { text-align: center; padding: 2rem; font-size: 0.85rem; color: #777; font-family: sans-serif; }
+        footer p { display: inline-block; margin: 0; padding: 0.35rem 1.1rem; background: rgba(255, 255, 255, 0.88); border-radius: 999px; }
 
         @media (max-width: 900px) {
             .lib { grid-template-columns: 1fr; }
@@ -142,6 +165,7 @@
     </style>
 </head>
 <body>
+    <div id="parallaxBg" aria-hidden="true"></div>
 
     <header>
         <h1><a href="index.html">Tutejowie</a></h1>
@@ -332,6 +356,38 @@
             renderList();
             show(start, true);
         }
+    })();
+    </script>
+
+    <script>
+    /* Efekt paralaksy: tło przesuwa się wolniej niż treść strony.
+       PREDKOSC: 0 = tło stoi w miejscu, 1 = tło przewija się tak samo szybko jak treść.
+       Przy ustawieniu systemowym „ogranicz ruch” (lub wyłączonym JavaScript) tło po prostu przewija się razem ze stroną. */
+    (function () {
+        var PREDKOSC = 0.4;
+        var layer = document.getElementById("parallaxBg");
+        if (!layer || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+        var root = document.documentElement, maxScroll = 0, ticking = false;
+
+        function update() {
+            ticking = false;
+            var y = Math.min(Math.max(window.pageYOffset || 0, 0), maxScroll);
+            layer.style.transform = "translate3d(0," + (-y * PREDKOSC).toFixed(1) + "px,0)";
+        }
+        function measure() {
+            var vh = window.innerHeight;
+            maxScroll = Math.max(0, Math.max(root.scrollHeight, document.body.scrollHeight) - vh);
+            layer.style.height = Math.ceil(vh + maxScroll * PREDKOSC) + "px";   // warstwa pokrywa cały zakres przewijania
+            update();
+        }
+        function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+
+        root.classList.add("parallax-on");
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", measure);
+        window.addEventListener("load", measure);
+        if (window.ResizeObserver) new ResizeObserver(measure).observe(document.body);
+        measure();
     })();
     </script>
 
