@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rodzina Igora Tutei – Archiwum i Rodowód</title>
+
+    <!-- Biblioteka drzewa (BALKAN FamilyTree JS) – plik familytree.js musi leżeć obok index.html -->
+    <script src="familytree.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #fcfbf7;
+            --text-color: #2b2b2b;
+            --primary-color: #1b365d;
+            --accent-color: #8b263e;
+            --card-bg: #ffffff;
+            --border-color: #e2ddd5;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            text-align: center;
+            padding: 2.5rem 1rem;
+            border-bottom: 4px solid var(--accent-color);
+        }
+
+        header h1 { margin: 0; font-size: 2.4rem; font-weight: normal; letter-spacing: 1px; }
+        header p { margin-top: 0.5rem; font-style: italic; opacity: 0.85; }
+
+        nav {
+            background-color: #12243e;
+            text-align: center;
+            padding: 0.8rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav a {
+            color: #e2ddd5;
+            text-decoration: none;
+            margin: 0 15px;
+            font-family: sans-serif;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.3s;
+        }
+        nav a:hover { color: #ffffff; }
+
+        .container { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+
+        section {
+            background: var(--card-bg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+
+        /* WAŻNE: kontener drzewa musi mieć wysokość, inaczej nic nie widać */
+        #tree {
+            width: 100%;
+            height: 600px;
+            background-color: #faf9f5;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .tree-error {
+            padding: 2rem;
+            color: var(--accent-color);
+            font-family: sans-serif;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .gallery-item {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            background: #faf9f5;
+            transition: transform 0.3s;
+        }
+        .gallery-item:hover { transform: translateY(-4px); }
+
+        .gallery-img-placeholder {
+            width: 100%;
+            height: 200px;
+            background-color: #e9e5dd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            font-style: italic;
+        }
+
+        .gallery-caption {
+            padding: 0.8rem;
+            font-size: 0.9rem;
+            text-align: center;
+            font-family: sans-serif;
+            color: #444;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-size: 0.95rem;
+            margin-top: 1rem;
+            margin-right: 0.5rem;
+        }
+        .btn:hover { background: #6b1d30; }
+        .btn.secondary { background: var(--primary-color); }
+        .btn.secondary:hover { background: #12243e; }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.85rem;
+            color: #777;
+            font-family: sans-serif;
+        }
+
+        /* ---------- PROFIL OSOBY (okno modalne) ---------- */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(18, 36, 62, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 1000;
+        }
+        .modal-backdrop.open { display: flex; }
+
+        .modal {
+            background: var(--card-bg);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 960px;
+            max-height: 94vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.2rem 1.5rem;
+            border-bottom: 3px solid var(--accent-color);
+            background: var(--primary-color);
+            color: #fff;
+        }
+        .modal-head h3 { margin: 0; font-weight: normal; font-size: 1.6rem; }
+        .modal-head .years { margin: 0.2rem 0 0; font-style: italic; opacity: 0.85; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 2rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 0.3rem;
+        }
+
+        .modal-body { padding: 1.2rem 1.5rem 1.5rem; overflow-y: auto; }
+        .modal-body .bio { margin: 0 0 1rem; }
+
+        .pdf-frame {
+            width: 100%;
+            height: 62vh;
+            min-height: 320px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #faf9f5;
+        }
+
+        .no-pdf {
+            padding: 1.5rem;
+            border: 1px dashed var(--border-color);
+            border-radius: 4px;
+            background: #faf9f5;
+            font-family: sans-serif;
+            color: #666;
+        }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.7rem; }
+            nav a { margin: 0 8px; font-size: 0.8rem; }
+            section { padding: 1.2rem; }
+            #tree { height: 480px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Rodzina Igora Tutei</h1>
+        <p>Archiwum Genealogiczne, Monografie i Historia Rodu</p>
+    </header>
+
+    <nav>
+        <a href="#drzewo">Drzewo Genealogiczne</a>
+        <a href="#biografie">Biografie</a>
+        <a href="#galeria">Galeria Rodzinna</a>
+    </nav>
+
+    <div class="container">
+
+        <!-- DRZEWO GENEALOGICZNE -->
+        <section id="drzewo">
+            <h2>Interaktywne Drzewo Genealogiczne</h2>
+            <p>Kliknij kafelek osoby, aby otworzyć jej profil i biografię w formacie PDF.</p>
+
+            <div id="tree"></div>
+        </section>
+
+        <!-- BIOGRAFIE -->
+        <section id="biografie">
+            <h2>Monografia: Antoni Hajdus (1907–1991)</h2>
+            <p>Urodzony w Czarnochowicach, podoficer zawodowy Marynarki Wojennej II RP (ORP „Iskra”, ORP „Rybitwa”), obrońca Helu 1939 r., jeniec obozu Stalag II-C Woldenberg, dowódca plutonu dywersyjnego Armii Krajowej (ps. „Świda”).</p>
+
+            <button type="button" class="btn" onclick="openProfile(1)">📄 Otwórz profil z podglądem monografii</button>
+            <a href="Antoni-Hajdus-1907-1991.pdf" class="btn secondary" target="_blank" rel="noopener">Pobierz PDF</a>
+        </section>
+
+        <!-- GALERIA RODZINNA -->
+        <section id="galeria">
+            <h2>Galeria Rodzinna</h2>
+            <p>Archiwalne fotografie przodków, spotkań rodzinnych oraz pamiątek historycznych:</p>
+
+            <div class="gallery-grid">
+                <div class="gallery-item">
+                    <div class="gallery-img-placeholder">[ Zdjęcie: Antoni Hajdus ]</div>
+                    <div class="gallery-caption">Antoni Hajdus w mundurze galowym</div>
+                </div>
+
+                <div class="gallery-item">
+                    <div class="gallery-img-placeholder">[ Spotkanie w Śledziejowicach ]</div>
+                    <div class="gallery-caption">Fotografia rodzinna</div>
+                </div>
+
+                <div class="gallery-item">
+                    <div class="gallery-img-placeholder">[ Dokumenty i Medale ]</div>
+                    <div class="gallery-caption">Archiwalia wojskowe i IPN</div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <footer>
+        <p>Rodzina Igora Tutei &copy; 2026. Cyfrowe Archiwum Domowe.</p>
+    </footer>
+
+    <!-- PROFIL OSOBY -->
+    <div class="modal-backdrop" id="profileModal" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="profileName">
+            <div class="modal-head">
+                <div>
+                    <h3 id="profileName"></h3>
+                    <p class="years" id="profileYears"></p>
+                </div>
+                <button type="button" class="modal-close" id="profileClose" aria-label="Zamknij profil">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="bio" id="profileBio"></p>
+                <div id="profilePdf"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ============================================================
+           DANE RODZINY
+           id    – unikalny numer osoby
+           pids  – partnerzy (małżonkowie), fid/mid – ojciec/matka
+           pdf   – nazwa pliku PDF z biografią (obok index.html); "" = brak
+           Poniżej tylko Antoni Hajdus jest uzupełniony – resztę wpisz
+           według wzoru (usuń lub zmień osoby „do uzupełnienia”).
+           ============================================================ */
+        var PEOPLE = [
+            {
+                id: 1,
+                pids: [2],
+                name: "Antoni Hajdus",
+                years: "1907–1991",
+                gender: "male",
+                bio: "Podoficer zawodowy Marynarki Wojennej II RP, obrońca Helu 1939 r., jeniec Stalagu II-C Woldenberg, dowódca plutonu dywersyjnego AK (ps. „Świda”).",
+                pdf: "Antoni-Hajdus-1907-1991.pdf"
+            },
+            {
+                id: 2,
+                pids: [1],
+                name: "Żona Antoniego (do uzupełnienia)",
+                years: "",
+                gender: "female",
+                bio: "",
+                pdf: ""
+            },
+            {
+                id: 3,
+                fid: 1,
+                mid: 2,
+                name: "Dziecko (do uzupełnienia)",
+                years: "",
+                gender: "male",
+                bio: "",
+                pdf: ""
+            }
+        ];
+
+        /* ---------- Okno profilu ---------- */
+        var modal = document.getElementById("profileModal");
+
+        function findPerson(id) {
+            for (var i = 0; i < PEOPLE.length; i++) {
+                if (PEOPLE[i].id === id) return PEOPLE[i];
+            }
+            return null;
+        }
+
+        function openProfile(id) {
+            var p = findPerson(id);
+            if (!p) return;
+
+            document.getElementById("profileName").textContent = p.name;
+            document.getElementById("profileYears").textContent = p.years || "";
+            document.getElementById("profileBio").textContent = p.bio || "";
+
+            var box = document.getElementById("profilePdf");
+            box.innerHTML = "";
+
+            if (p.pdf) {
+                var frame = document.createElement("iframe");
+                frame.className = "pdf-frame";
+                frame.title = "Biografia: " + p.name;
+                frame.src = encodeURI(p.pdf);
+                box.appendChild(frame);
+
+                var link = document.createElement("a");
+                link.className = "btn";
+                link.href = encodeURI(p.pdf);
+                link.target = "_blank";
+                link.rel = "noopener";
+                link.textContent = "Otwórz PDF w nowej karcie";
+                box.appendChild(link);
+            } else {
+                var info = document.createElement("div");
+                info.className = "no-pdf";
+                info.textContent = "Dla tej osoby nie dodano jeszcze biografii w formacie PDF.";
+                box.appendChild(info);
+            }
+
+            modal.classList.add("open");
+            modal.setAttribute("aria-hidden", "false");
+            document.getElementById("profileClose").focus();
+        }
+
+        function closeProfile() {
+            modal.classList.remove("open");
+            modal.setAttribute("aria-hidden", "true");
+            document.getElementById("profilePdf").innerHTML = ""; // zatrzymuje podgląd PDF
+        }
+
+        document.getElementById("profileClose").addEventListener("click", closeProfile);
+        modal.addEventListener("click", function (e) { if (e.target === modal) closeProfile(); });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeProfile(); });
+
+        /* ---------- Drzewo genealogiczne ---------- */
+        function createTree() {
+            var treeElement = document.getElementById("tree");
+            if (!treeElement) return;
+
+            if (typeof FamilyTree === "undefined") {
+                treeElement.innerHTML =
+                    '<div class="tree-error">Nie wczytano biblioteki drzewa. Sprawdź, czy plik ' +
+                    '<b>familytree.js</b> leży w tym samym folderze co index.html.</div>';
+                return;
+            }
+
+            var nodes = PEOPLE.map(function (p) {
+                var n = { id: p.id, name: p.name, title: p.years, tags: [p.gender] };
+                if (p.pids) n.pids = p.pids;
+                if (p.fid !== undefined) n.fid = p.fid;
+                if (p.mid !== undefined) n.mid = p.mid;
+                return n;
+            });
+
+            var family = new FamilyTree(treeElement, {
+                template: "john",
+                mouseScrool: FamilyTree.action.scroll,   // kółko myszy przewija stronę, nie drzewo
+                nodeBinding: {
+                    field_0: "name",
+                    field_1: "title"
+                },
+                tags: {
+                    male:   { template: "john_male" },
+                    female: { template: "john_female" }
+                },
+                nodeMenu: null,
+                nodeCircleMenu: null,
+                menu: null,
+                editForm: { readOnly: true },
+                nodes: nodes
+            });
+
+            // Kliknięcie w osobę -> własny profil z PDF (zamiast domyślnego formularza)
+            family.on("click", function (sender, args) {
+                openProfile(Number(args.node.id));
+                return false;
+            });
+        }
+
+        window.addEventListener("load", createTree);
+    </script>
+
+</body>
+</html>
