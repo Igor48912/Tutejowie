@@ -186,6 +186,11 @@
         .node:hover .tile { stroke-width: 3; }
         .node:focus-visible .tile { stroke: #000 !important; stroke-width: 3; }
         .node.sel .tile { stroke-width: 4; filter: drop-shadow(0 3px 6px rgba(35, 42, 54, 0.35)); }
+        @keyframes nodePulse {
+            0%, 100% { filter: drop-shadow(0 0 0 rgba(217, 43, 87, 0)); }
+            50% { filter: drop-shadow(0 0 10px rgba(217, 43, 87, 0.95)); }
+        }
+        .node.pulse .tile { animation: nodePulse 0.9s ease-in-out 3; }
         .nm { font: 600 12px "Segoe UI", system-ui, sans-serif; fill: #1f2633; pointer-events: none; }
         .yr { font: 10.5px "Segoe UI", system-ui, sans-serif; fill: #667085; pointer-events: none; }
         .me .nm { fill: #fff; }
@@ -348,6 +353,87 @@
             .bio-ov { opacity: 1; align-items: flex-end; padding-bottom: 0.7rem; background: linear-gradient(to top, rgba(12, 18, 30, 0.7), rgba(12, 18, 30, 0) 55%); }
         }
 
+        /* ---------- Galeria (przewijany pasek zdjęć) ---------- */
+        .gal-strip {
+            display: flex;
+            gap: 1.1rem;
+            overflow-x: auto;
+            padding: 0.4rem 0.3rem 1rem;
+            scroll-snap-type: x proximity;
+            scroll-padding-left: 0.3rem;
+            scrollbar-width: thin;
+            cursor: grab;
+        }
+        .gal-strip.dragging { cursor: grabbing; user-select: none; scroll-snap-type: none; }
+        .gal-card {
+            flex: 0 0 260px;
+            scroll-snap-align: start;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(20, 30, 50, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .gal-card:hover, .gal-card:focus-within { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(20, 30, 50, 0.16); }
+        .gal-photo { position: relative; height: 180px; background: #eef1f5; }
+        .gal-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .gal-photo img.broken { visibility: hidden; }
+        .gal-ov { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(12, 18, 30, 0.45); opacity: 0; transition: opacity 0.2s; }
+        .gal-card:hover .gal-ov, .gal-card:focus-within .gal-ov { opacity: 1; }
+        .gal-open { font: 600 0.88rem sans-serif; padding: 0.55rem 1.1rem; border: 0; border-radius: 999px; background: #fff; color: var(--ink); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+        .gal-open:hover { background: #f2f4f7; }
+        .gal-info { padding: 0.7rem 0.9rem 0.85rem; text-align: center; }
+        .gal-title { margin: 0; font: normal 1rem/1.3 Georgia, serif; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+        .gal-meta { margin: 0.25rem 0 0; font: 0.82rem sans-serif; color: var(--muted); min-height: 1.2em; }
+        .gal-wrap .bio-arrow { top: 75px; }
+        @media (hover: none) {
+            .gal-ov { opacity: 1; align-items: flex-end; padding-bottom: 0.6rem; background: linear-gradient(to top, rgba(12, 18, 30, 0.6), rgba(12, 18, 30, 0) 55%); }
+        }
+
+        /* ---------- Podgląd powiększony (lightbox) ---------- */
+        body.lb-open { overflow: hidden; }
+        .lb { position: fixed; inset: 0; z-index: 1500; background: rgba(8, 12, 20, 0.95); display: flex; align-items: center; justify-content: center; padding: 3.2rem 5rem 2.5rem; }
+        .lb-fig { margin: 0; max-width: 100%; max-height: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+        .lb-fig img { max-width: 100%; max-height: calc(100vh - 12rem); object-fit: contain; border-radius: 6px; background: #111; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); transition: opacity 0.2s; }
+        .lb-fig img.loading { opacity: 0.35; }
+        .lb-cap { color: #e8ebf1; font: 0.9rem sans-serif; text-align: center; display: flex; flex-direction: column; gap: 0.2rem; align-items: center; max-width: 760px; }
+        .lb-cap strong { font: normal 1.2rem Georgia, serif; color: #fff; }
+        .lb-cap strong:empty { display: none; }
+        .lb-cap span { color: #b9c0cd; }
+        .lb-cap span:empty { display: none; }
+        .lb-cap .lb-desc { color: #d7dce5; margin-top: 0.2rem; }
+        .lb-cap a { color: #9ec5ff; text-decoration: none; margin-top: 0.3rem; }
+        .lb-cap a:hover { text-decoration: underline; }
+        .lb-x { position: absolute; top: 0.6rem; right: 1rem; background: none; border: 0; color: #fff; font-size: 2.4rem; line-height: 1; cursor: pointer; padding: 0.2rem 0.6rem; }
+        .lb-count { position: absolute; top: 1rem; left: 1.4rem; color: #c6ccd8; font: 0.85rem sans-serif; }
+        .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.14); color: #fff; font-size: 2rem; line-height: 1; padding: 0 0 4px; cursor: pointer; }
+        .lb-nav:hover { background: rgba(255, 255, 255, 0.28); }
+        .lb-nav.prev { left: 1rem; }
+        .lb-nav.next { right: 1rem; }
+        @media (max-width: 640px) {
+            .lb { padding: 3rem 0.6rem 5.5rem; }
+            .lb-fig img { max-height: calc(100vh - 14rem); }
+            .lb-nav { top: auto; bottom: 1rem; transform: none; }
+        }
+
+        /* ---------- Administrator: galeria ---------- */
+        .adm-tabs { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; border-bottom: 1px solid var(--line); }
+        .adm-tabs .tab { font: 0.9rem sans-serif; padding: 0.5rem 1.1rem; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; background: none; color: var(--muted); cursor: pointer; margin-bottom: -1px; }
+        .adm-tabs .tab.active { background: #fff; color: var(--ink); border-color: var(--line); font-weight: 600; }
+        .g-status { font: 0.84rem sans-serif; color: var(--muted); }
+        .g-status.ok { color: #067647; }
+        .g-status.err { color: #b42318; }
+        .adm-help { margin: 0.6rem 0; font: 0.86rem/1.55 sans-serif; color: #475467; }
+        .adm-help summary { cursor: pointer; color: var(--accent); }
+        .adm-help ol { margin: 0.5rem 0 0; padding-left: 1.3rem; }
+        .g-addbox { margin: 0.8rem 0; padding: 0.8rem; background: #f8f9fa; border: 1px dashed #cfd4dc; border-radius: 8px; }
+        .lib-info { margin: 0.6rem 0 0.4rem; font: 0.82rem sans-serif; color: var(--muted); }
+        .g-thumb { width: 64px; height: 48px; object-fit: cover; border-radius: 4px; background: #eef1f5; display: block; }
+        .adm-table td input { width: 100%; font: 0.85rem sans-serif; padding: 0.3rem 0.45rem; border: 1px solid #cfd4dc; border-radius: 6px; }
+        .adm-table td input.g-year { width: 72px; }
+
         /* ---------- Galeria ---------- */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
         .gallery-item { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fafafa; }
@@ -497,6 +583,28 @@
         .panel-main.viewer { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
         .panel-main.viewer iframe { flex: 1; width: 100%; border: 0; background: #f2f4f7; }
         .viewer-note { margin: 0; padding: 0.4rem 1rem; font-size: 0.78rem; color: var(--muted); background: #f8f9fa; border-top: 1px solid var(--line); }
+
+        /* tryb biografii: cały panel się przewija (zdjęcie u góry), a podgląd PDF zajmuje pełną wysokość okna */
+        .panel.wide { overflow-y: auto; }
+        .panel.wide .panel-top { flex: none; }
+        .panel.wide .panel-top.has-photo { aspect-ratio: auto; height: min(36vh, 280px); max-height: none; }
+        .panel.wide .panel-main.viewer {
+            flex: none;
+            height: calc(100vh - var(--bh, 82px));
+            height: calc(100dvh - var(--bh, 82px));
+        }
+        .panel.wide .panel-bottom { flex: none; position: sticky; bottom: 0; z-index: 3; }
+        .viewer-bar {
+            flex: none;
+            display: flex;
+            align-items: baseline;
+            gap: 0.7rem;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--line);
+        }
+        .viewer-bar strong { font: normal 1rem Georgia, serif; }
+        .viewer-bar span { font: 0.82rem sans-serif; color: var(--muted); }
 
         .facts { margin: 0; }
         .fact { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
@@ -656,6 +764,7 @@
         <a href="#biografie">Biografie</a>
         <a href="#galeria">Galeria rodzinna</a>
         <a href="biografie.html">Wszystkie biografie</a>
+        <a href="galeria.html">Pełna galeria</a>
     </nav>
 
     <div class="container">
@@ -669,6 +778,7 @@
                 <span class="ttl">Tryb administratora</span>
                 <button type="button" class="sbtn primary" id="abAdd">+ Dodaj osobę</button>
                 <button type="button" class="sbtn" id="abList">Lista osób</button>
+                <button type="button" class="sbtn" id="abGallery">Galeria</button>
                 <button type="button" class="sbtn" id="abExport">Eksportuj dane (dane.js)</button>
                 <button type="button" class="sbtn" id="abExit">Wyjdź z trybu</button>
                 <span class="dirty" id="abDirty" hidden>● zmiany nie są jeszcze wyeksportowane</span>
@@ -733,22 +843,22 @@
         <!-- GALERIA RODZINNA -->
         <section id="galeria">
             <h2>Galeria rodzinna</h2>
-            <p>Archiwalne fotografie przodków, spotkań rodzinnych oraz pamiątek historycznych:</p>
+            <p>Archiwalne fotografie przodków, spotkań rodzinnych oraz pamiątek historycznych. Kliknij zdjęcie, aby je powiększyć.</p>
 
-            <div class="gallery-grid">
-                <div class="gallery-item">
-                    <div class="gallery-img-placeholder">[ Zdjęcie: Antoni Hajdus ]</div>
-                    <div class="gallery-caption">Antoni Hajdus w mundurze galowym</div>
-                </div>
-                <div class="gallery-item">
-                    <div class="gallery-img-placeholder">[ Spotkanie w Śledziejowicach ]</div>
-                    <div class="gallery-caption">Fotografia rodzinna</div>
-                </div>
-                <div class="gallery-item">
-                    <div class="gallery-img-placeholder">[ Dokumenty i Medale ]</div>
-                    <div class="gallery-caption">Archiwalia wojskowe i IPN</div>
-                </div>
+            <div class="bio-head">
+                <span class="bio-count" id="galCount"></span>
+                <a class="btn ghost" href="galeria.html">Pełna galeria →</a>
             </div>
+
+            <div class="bio-wrap gal-wrap" id="galWrap">
+                <button type="button" class="bio-arrow prev" id="galPrev" aria-label="Przewiń w lewo" hidden>&#8249;</button>
+                <div class="gal-strip" id="galStrip" role="list" aria-label="Zdjęcia z galerii rodzinnej"></div>
+                <button type="button" class="bio-arrow next" id="galNext" aria-label="Przewiń w prawo" hidden>&#8250;</button>
+            </div>
+            <p class="bio-empty" id="galEmpty" hidden>W galerii nie ma jeszcze zdjęć.
+                <a id="galFolder" href="#" target="_blank" rel="noopener" hidden>Zdjęcia rodzinne znajdziesz w folderze na Dysku Google ↗</a>
+                <span class="admin-only"><br>Administratorze: dodaj zdjęcia do folderu na Dysku Google i w oknie „Galeria” wybierz „Synchronizuj z folderem” (albo dodaj zdjęcia ręcznie).</span>
+            </p>
         </section>
 
     </div>
@@ -756,6 +866,23 @@
     <footer>
         <p>Tutejowie &copy; 2026. Cyfrowe Archiwum Domowe. <a href="#admin" id="adminLink">Administrator</a></p>
     </footer>
+
+    <!-- PODGLĄD POWIĘKSZONY ZDJĘCIA -->
+    <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Podgląd zdjęcia">
+        <button type="button" class="lb-x" id="lbX" aria-label="Zamknij podgląd">&times;</button>
+        <div class="lb-count" id="lbCount"></div>
+        <button type="button" class="lb-nav prev" id="lbPrev" aria-label="Poprzednie zdjęcie">&#8249;</button>
+        <figure class="lb-fig">
+            <img id="lbImg" alt="" referrerpolicy="no-referrer">
+            <figcaption class="lb-cap">
+                <strong id="lbTitle"></strong>
+                <span id="lbMeta"></span>
+                <span id="lbDesc" class="lb-desc"></span>
+                <a id="lbOpen" target="_blank" rel="noopener"></a>
+            </figcaption>
+        </figure>
+        <button type="button" class="lb-nav next" id="lbNext" aria-label="Następne zdjęcie">&#8250;</button>
+    </div>
 
     <!-- PANEL PROFILU -->
     <div class="backdrop" id="backdrop"></div>
@@ -783,6 +910,7 @@
         </div>
 
         <div class="panel-main viewer" id="viewBio" hidden>
+            <div class="viewer-bar"><strong id="viewerName"></strong><span id="viewerYears"></span></div>
             <iframe id="pdfFrame" title="Biografia w formacie PDF"></iframe>
             <p class="viewer-note">Jeśli podgląd się nie wyświetla, użyj przycisku „Otwórz PDF”.</p>
         </div>
@@ -799,6 +927,11 @@
             </div>
             <div class="modal-body">
 
+                <div class="adm-tabs" id="admTabs">
+                    <button type="button" class="tab active" id="tabPeople">Osoby</button>
+                    <button type="button" class="tab" id="tabGallery">Galeria</button>
+                </div>
+
                 <div id="admList">
                     <p class="adm-note">Zmiany zapisują się automatycznie <b>w tej przeglądarce</b> – odwiedzający strony ich nie widzą. Aby opublikować zmiany, kliknij „Eksportuj dane” i wgraj pobrany plik <b>dane.js</b> na hosting obok <b>index.html</b> (zastępując stary).</p>
                     <div class="adm-toolbar">
@@ -813,6 +946,54 @@
                         <table class="adm-table">
                             <thead><tr><th>Osoba</th><th>Daty</th><th>Rodzice</th><th></th></tr></thead>
                             <tbody id="admRows"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="admGallery" hidden>
+                    <p class="adm-note">Zdjęcia trzymasz w folderze na Dysku Google, a strona pokazuje je z listy zapisanej w pliku <b>dane.js</b> (odwiedzający nie łączą się z Dyskiem, tylko pobierają miniatury). Po zmianach kliknij „Eksportuj dane” i wgraj <b>dane.js</b> na hosting.</p>
+                    <div class="fgrid">
+                        <div class="fld full">
+                            <label for="gFolder">Link do folderu na Dysku Google</label>
+                            <input type="text" id="gFolder" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off">
+                        </div>
+                        <div class="fld full">
+                            <label for="gKey">Klucz API Dysku Google (tylko do synchronizacji – zostaje wyłącznie w tej przeglądarce, nie trafia do dane.js)</label>
+                            <input type="text" id="gKey" placeholder="AIza…" autocomplete="off" spellcheck="false">
+                        </div>
+                    </div>
+                    <div class="adm-toolbar" style="margin-top:.8rem">
+                        <button type="button" class="sbtn primary" id="gSync">Synchronizuj z folderem</button>
+                        <button type="button" class="sbtn" id="gAddBtn">+ Dodaj zdjęcie ręcznie</button>
+                        <span class="g-status" id="gStatus" role="status"></span>
+                    </div>
+                    <details class="adm-help">
+                        <summary>Jak połączyć folder z Dysku Google?</summary>
+                        <ol>
+                            <li><b>Udostępnij folder:</b> w Dysku kliknij folder prawym przyciskiem → Udostępnij → „Dostęp ogólny” → <b>Każda osoba mająca link</b>, rola <b>Przeglądający</b>. Bez tego zdjęcia nie wyświetlą się odwiedzającym.</li>
+                            <li><b>Klucz API (jednorazowo):</b> wejdź na <i>console.cloud.google.com</i> → utwórz projekt → „Interfejsy API i usługi” → włącz <b>Google Drive API</b> → „Dane logowania” → „Utwórz dane logowania” → <b>Klucz API</b>. Skopiuj go do pola powyżej.</li>
+                            <li>Kliknij <b>Synchronizuj z folderem</b>. Podfoldery stają się albumami, a rok jest brany z nazwy pliku lub folderu (np. „1939 wrzesień”) albo z daty zdjęcia. Opis pliku na Dysku zostanie podpisem.</li>
+                            <li>Możesz poprawić tytuły, albumy i lata w tabeli poniżej – przy kolejnej synchronizacji Twoje poprawki zostaną zachowane.</li>
+                            <li><b>Bez klucza:</b> użyj „+ Dodaj zdjęcie ręcznie” i wklej link do zdjęcia („Udostępnij → Kopiuj link”).</li>
+                        </ol>
+                    </details>
+                    <div class="g-addbox" id="gAddBox" hidden>
+                        <div class="fgrid">
+                            <div class="fld full"><label for="gaLink">Link do zdjęcia z Dysku Google lub ścieżka do pliku (np. galeria/foto.jpg)</label><input type="text" id="gaLink" autocomplete="off"></div>
+                            <div class="fld"><label for="gaTitle">Tytuł / podpis</label><input type="text" id="gaTitle" maxlength="160"></div>
+                            <div class="fld"><label for="gaAlbum">Album</label><input type="text" id="gaAlbum" maxlength="80"></div>
+                            <div class="fld"><label for="gaYear">Rok</label><input type="text" id="gaYear" maxlength="10"></div>
+                        </div>
+                        <div class="form-actions" style="margin-top:.8rem;padding-top:.8rem">
+                            <button type="button" class="sbtn primary" id="gaSave">Dodaj do galerii</button>
+                            <button type="button" class="sbtn" id="gaCancel">Anuluj</button>
+                        </div>
+                    </div>
+                    <p class="lib-info"><span id="gInfo"></span> w galerii</p>
+                    <div class="adm-table-wrap">
+                        <table class="adm-table">
+                            <thead><tr><th>Zdjęcie</th><th>Tytuł / podpis</th><th>Album</th><th>Rok</th><th></th></tr></thead>
+                            <tbody id="gRows"></tbody>
                         </table>
                     </div>
                 </div>
@@ -1103,7 +1284,7 @@
                     return rec;
                 }
                 make(SRC, "male");
-                return { version: 1, rootId: 1, nextId: nid + 1, people: people, marriages: marriages };
+                return { version: 1, rootId: 1, nextId: nid + 1, people: people, marriages: marriages, gallery: { folderUrl: DEFAULT_FOLDER_URL, items: [] } };
             }
 
             /* ---------- czyszczenie i sprawdzanie danych (seed, dane.js, import, kopia lokalna) ---------- */
@@ -1114,6 +1295,40 @@
                 if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(s)) return s.length < 700000 ? s : "";
                 if (/^\s*[a-z][a-z0-9+.\-]*:/i.test(s) && !/^https?:/i.test(s)) return "";
                 return s.slice(0, 300);
+            }
+            var DEFAULT_FOLDER_URL = "https://drive.google.com/drive/folders/1y1DfEpl5tj8DigdmCUcrGNjYY3lA1Dy7";
+            function driveFolderId(url) {
+                var m = /\/folders\/([A-Za-z0-9_-]{10,})/.exec(url || "") || /[?&]id=([A-Za-z0-9_-]{10,})/.exec(url || "");
+                return m ? m[1] : "";
+            }
+            function driveFileId(s) {
+                s = (s || "").trim();
+                var m = /\/file\/d\/([A-Za-z0-9_-]{10,})/.exec(s) || /[?&]id=([A-Za-z0-9_-]{10,})/.exec(s) || /\/d\/([A-Za-z0-9_-]{10,})/.exec(s);
+                if (m && /drive\.google\.com|docs\.google\.com|googleusercontent\.com/.test(s)) return m[1];
+                return /^[A-Za-z0-9_-]{25,60}$/.test(s) ? s : "";
+            }
+            function safeFolderUrl(s) { var id = driveFolderId(clean(s, 300)); return id ? "https://drive.google.com/drive/folders/" + id : ""; }
+            function safeUrl(s) {
+                s = clean(s, 300);
+                if (!s) return "";
+                if (/^\s*[a-z][a-z0-9+.\-]*:/i.test(s) && !/^https?:/i.test(s)) return "";
+                return s;
+            }
+            function normGallery(g) {
+                var out = { folderUrl: "", items: [] };
+                if (!g || typeof g !== "object") return out;
+                out.folderUrl = safeFolderUrl(g.folderUrl);
+                (Array.isArray(g.items) ? g.items : []).slice(0, 3000).forEach(function (it) {
+                    if (!it || typeof it !== "object") return;
+                    var id = /^[A-Za-z0-9_-]{10,80}$/.test(it.id || "") ? it.id : "";
+                    var url = id ? "" : safeUrl(it.url);
+                    if (!id && !url) return;
+                    out.items.push({
+                        id: id, url: url, title: clean(it.title, 160), album: clean(it.album, 80),
+                        year: clean(it.year, 10), desc: clean(it.desc, 300), manual: !!it.manual
+                    });
+                });
+                return out;
             }
             function safePdf(s) {
                 s = clean(s, 300);
@@ -1165,7 +1380,8 @@
                     var root = parseInt(raw.rootId, 10);
                     if (!ids[root]) root = people.length ? people[0].id : 0;
                     if (!people.length) return null;
-                    return { version: 1, rootId: root, nextId: max + 1, people: people, marriages: marriages };
+                    var gallery = raw.gallery === undefined ? { folderUrl: DEFAULT_FOLDER_URL, items: [] } : normGallery(raw.gallery);
+                    return { version: 1, rootId: root, nextId: max + 1, people: people, marriages: marriages, gallery: gallery };
                 } catch (e) { return null; }
             }
 
@@ -1554,6 +1770,7 @@
             return {
                 TW: TW, TH: TH, PH: PH, U: U, tw: tw,
                 buildSeed: buildSeed, normalize: normalize, buildModel: buildModel,
+                driveFolderId: driveFolderId, driveFileId: driveFileId, safeFolderUrl: safeFolderUrl, safeUrl: safeUrl,
                 layoutPedigree: layoutPedigree, layoutBranch: layoutBranch,
                 partnersOf: partnersOf, hueAt: hueAt, yearsText: yearsText, lifeYears: lifeYears, fmt: fmt, lineColor: lineColor
             };
@@ -1912,6 +2129,16 @@
             $("pdfFrame").src = on ? encodeURI(p.pdf) + "#view=FitH" : "about:blank";
             renderBottom();
             updateBackdrop();
+            if (on) {
+                $("viewerName").textContent = p.name;
+                $("viewerYears").textContent = F.lifeYears(p);
+                requestAnimationFrame(function () {
+                    panel.style.setProperty("--bh", $("panelBottom").offsetHeight + "px");
+                    panel.scrollTo({ top: $("viewBio").offsetTop, behavior: "smooth" });   // od razu pokazujemy cały podgląd PDF
+                });
+            } else {
+                panel.scrollTop = 0;
+            }
         }
 
         function fillPanel(p) {
@@ -2016,6 +2243,7 @@
             $("viewProfile").hidden = false;
             $("viewBio").hidden = true;
             $("pdfFrame").src = "about:blank";
+            panel.scrollTop = 0;
             updateBackdrop();
             var sel = svg.querySelectorAll(".node.sel");
             Array.prototype.forEach.call(sel, function (n) { n.setAttribute("class", n.getAttribute("class").replace(" sel", "")); });
@@ -2176,6 +2404,164 @@
         bioStrip.addEventListener("pointerup", endBdrag);
         bioStrip.addEventListener("pointercancel", endBdrag);
 
+        /* ---------- galeria: pasek zdjęć i podgląd powiększony ---------- */
+        function plFoto(n) {
+            var m10 = n % 10, m100 = n % 100;
+            if (n === 1) return "zdjęcie";
+            return (m10 >= 2 && m10 <= 4 && !(m100 >= 12 && m100 <= 14)) ? "zdjęcia" : "zdjęć";
+        }
+        function galSorted() {
+            var items = DATA.gallery.items.slice();
+            items.sort(function (a, b) {
+                var ya = parseInt(a.year, 10), yb = parseInt(b.year, 10);
+                var ka = (a.album + " " + a.title), kb = (b.album + " " + b.title);
+                if (isNaN(ya) && isNaN(yb)) return ka.localeCompare(kb, "pl");
+                if (isNaN(ya)) return 1;
+                if (isNaN(yb)) return -1;
+                return (ya - yb) || ka.localeCompare(kb, "pl");
+            });
+            return items;
+        }
+        function galUrl(it, w) { return it.id ? "https://drive.google.com/thumbnail?id=" + it.id + "&sz=w" + w : it.url; }
+        function galAlt(it, w) { return it.id ? "https://lh3.googleusercontent.com/d/" + it.id + "=w" + w : ""; }
+        function galTitle(it) { return it.title || "Zdjęcie"; }
+        function galMeta(it) { return [it.album, it.year].filter(Boolean).join(" · "); }
+        function galImg(it, w) {
+            var img = document.createElement("img");
+            img.alt = galTitle(it);
+            img.loading = "lazy";
+            img.decoding = "async";
+            img.referrerPolicy = "no-referrer";
+            img.addEventListener("error", function () {
+                var a = galAlt(it, w);
+                if (a && !img.getAttribute("data-alt")) { img.setAttribute("data-alt", "1"); img.src = a; }
+                else img.classList.add("broken");
+            });
+            img.src = galUrl(it, w);
+            return img;
+        }
+
+        var galStrip = $("galStrip"), galList = [];
+        function updateGalArrows() {
+            var max = galStrip.scrollWidth - galStrip.clientWidth;
+            $("galPrev").hidden = !(max > 4 && galStrip.scrollLeft > 10);
+            $("galNext").hidden = !(max > 4 && galStrip.scrollLeft < max - 4);
+        }
+        function renderGalStrip() {
+            galList = galSorted();
+            galStrip.innerHTML = "";
+            $("galCount").textContent = galList.length ? "Dostępne: " + galList.length + " " + plFoto(galList.length) : "";
+            $("galEmpty").hidden = galList.length > 0;
+            $("galWrap").hidden = galList.length === 0;
+            var fid = F.driveFolderId(DATA.gallery.folderUrl);
+            $("galFolder").hidden = !fid;
+            if (fid) $("galFolder").href = "https://drive.google.com/drive/folders/" + fid;
+            galList.forEach(function (it, i) {
+                var card = el("article", "gal-card");
+                card.setAttribute("role", "listitem");
+                card.setAttribute("data-i", i);
+                var ph = el("div", "gal-photo");
+                ph.appendChild(galImg(it, 600));
+                var ov = el("div", "gal-ov");
+                var btn = el("button", "gal-open", "Powiększ");
+                btn.type = "button";
+                ov.appendChild(btn);
+                ph.appendChild(ov);
+                var info = el("div", "gal-info");
+                info.appendChild(el("h3", "gal-title", galTitle(it)));
+                info.appendChild(el("p", "gal-meta", galMeta(it)));
+                card.appendChild(ph);
+                card.appendChild(info);
+                galStrip.appendChild(card);
+            });
+            updateGalArrows();
+        }
+        galStrip.addEventListener("click", function (e) {
+            var card = e.target.closest(".gal-card");
+            if (card) lbOpen(galList, Number(card.getAttribute("data-i")), card);
+        });
+        galStrip.addEventListener("scroll", updateGalArrows);
+        window.addEventListener("resize", updateGalArrows);
+        $("galPrev").addEventListener("click", function () { galStrip.scrollBy({ left: -galStrip.clientWidth * 0.8, behavior: "smooth" }); });
+        $("galNext").addEventListener("click", function () { galStrip.scrollBy({ left: galStrip.clientWidth * 0.8, behavior: "smooth" }); });
+        var gdrag = null;
+        galStrip.addEventListener("pointerdown", function (e) {
+            if (e.pointerType !== "mouse" || e.button !== 0) return;
+            gdrag = { x: e.clientX, sl: galStrip.scrollLeft, moved: false };
+        });
+        galStrip.addEventListener("pointermove", function (e) {
+            if (!gdrag) return;
+            var dx = e.clientX - gdrag.x;
+            if (!gdrag.moved && Math.abs(dx) > 6) {
+                gdrag.moved = true;
+                galStrip.classList.add("dragging");
+                try { galStrip.setPointerCapture(e.pointerId); } catch (err) {}
+            }
+            if (gdrag.moved) galStrip.scrollLeft = gdrag.sl - dx;
+        });
+        function endGdrag() { gdrag = null; galStrip.classList.remove("dragging"); }
+        galStrip.addEventListener("pointerup", endGdrag);
+        galStrip.addEventListener("pointercancel", endGdrag);
+
+        /* podgląd powiększony (lightbox) */
+        var lbBox = $("lb"), lbState = { list: [], i: 0, opener: null };
+        function lbShow(i) {
+            var n = lbState.list.length;
+            if (!n) return;
+            i = (i + n) % n;
+            lbState.i = i;
+            var it = lbState.list[i], img = $("lbImg");
+            img.removeAttribute("data-alt");
+            img.classList.add("loading");
+            img.onload = function () { img.classList.remove("loading"); };
+            img.onerror = function () {
+                var a = galAlt(it, 2000);
+                if (a && !img.getAttribute("data-alt")) { img.setAttribute("data-alt", "1"); img.src = a; }
+                else img.classList.remove("loading");
+            };
+            img.alt = galTitle(it);
+            img.src = galUrl(it, 2000);
+            $("lbTitle").textContent = it.title || "";
+            $("lbMeta").textContent = galMeta(it);
+            $("lbDesc").textContent = it.desc || "";
+            var open = $("lbOpen");
+            open.href = it.id ? "https://drive.google.com/file/d/" + it.id + "/view" : it.url;
+            open.textContent = it.id ? "Otwórz w Dysku Google ↗" : "Otwórz oryginał ↗";
+            $("lbCount").textContent = (i + 1) + " / " + n;
+            $("lbPrev").hidden = $("lbNext").hidden = n < 2;
+            if (n > 1) [i + 1, i - 1].forEach(function (k) { var o = lbState.list[(k + n) % n]; if (o) { var pre = new Image(); pre.referrerPolicy = "no-referrer"; pre.src = galUrl(o, 2000); } });
+        }
+        function lbOpen(list, i, opener) {
+            lbState.list = list; lbState.opener = opener || null;
+            lbBox.hidden = false;
+            document.body.classList.add("lb-open");
+            lbShow(i);
+            $("lbX").focus();
+        }
+        function lbClose() {
+            lbBox.hidden = true;
+            document.body.classList.remove("lb-open");
+            $("lbImg").removeAttribute("src");
+            if (lbState.opener && lbState.opener.focus) { try { lbState.opener.focus(); } catch (e) {} }
+        }
+        $("lbX").addEventListener("click", lbClose);
+        $("lbPrev").addEventListener("click", function () { lbShow(lbState.i - 1); });
+        $("lbNext").addEventListener("click", function () { lbShow(lbState.i + 1); });
+        lbBox.addEventListener("click", function (e) { if (e.target === lbBox || e.target.classList.contains("lb-fig")) lbClose(); });
+        document.addEventListener("keydown", function (e) {
+            if (lbBox.hidden) return;
+            if (e.key === "ArrowLeft") { e.preventDefault(); lbShow(lbState.i - 1); }
+            else if (e.key === "ArrowRight") { e.preventDefault(); lbShow(lbState.i + 1); }
+        });
+        var lbTouch = null;
+        lbBox.addEventListener("touchstart", function (e) { lbTouch = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+        lbBox.addEventListener("touchend", function (e) {
+            if (lbTouch == null) return;
+            var dx = e.changedTouches[0].clientX - lbTouch;
+            if (Math.abs(dx) > 50) lbShow(lbState.i + (dx < 0 ? 1 : -1));
+            lbTouch = null;
+        }, { passive: true });
+
         /* ---------- pełny ekran drzewa ---------- */
         var fsBtn = $("fsBtn");
         function isFull() { return document.body.classList.contains("tree-full"); }
@@ -2261,6 +2647,7 @@
             fillGenSelect();
             fillSearch();
             renderBioStrip();
+            renderGalStrip();
             if (state.selId && !M.byId[state.selId]) closePanel();
             if (state.view === "branch" && !M.byId[state.branch]) { state.view = "pedigree"; state.branch = null; }
             render();
@@ -2335,10 +2722,10 @@
         function openModal() { modal.hidden = false; }
         function closeModal() { modal.hidden = true; }
         function showList() {
-            $("admList").hidden = false;
             $("admForm").hidden = true;
+            $("admTabs").hidden = false;
             $("admTitle").textContent = "Panel administratora";
-            refreshList();
+            showAdmTab(admTab);
             openModal();
         }
 
@@ -2412,6 +2799,8 @@
             });
 
             $("admList").hidden = true;
+            $("admGallery").hidden = true;
+            $("admTabs").hidden = true;
             $("admForm").hidden = false;
             openModal();
             $("fName").focus();
@@ -2741,6 +3130,175 @@
             });
         });
 
+        /* ---------- panel administratora: galeria ---------- */
+        var LS_GKEY = "tuteja_gallery_key";
+        var admTab = "people";
+
+        function showAdmTab(tab) {
+            admTab = tab;
+            $("admList").hidden = tab !== "people";
+            $("admGallery").hidden = tab !== "gallery";
+            $("tabPeople").classList.toggle("active", tab === "people");
+            $("tabGallery").classList.toggle("active", tab === "gallery");
+            if (tab === "gallery") renderAdmGallery(); else refreshList();
+        }
+        function gStatus(msg, kind) {
+            var s = $("gStatus");
+            s.textContent = msg || "";
+            s.className = "g-status" + (kind ? " " + kind : "");
+        }
+
+        function renderAdmGallery() {
+            $("gFolder").value = DATA.gallery.folderUrl || "";
+            $("gKey").value = lsGet(LS_GKEY) || "";
+            var items = DATA.gallery.items, tb = $("gRows");
+            tb.innerHTML = "";
+            $("gInfo").textContent = items.length + " " + plFoto(items.length);
+            items.forEach(function (it, idx) {
+                var tr = document.createElement("tr");
+                var td0 = el("td");
+                var th = document.createElement("img");
+                th.className = "g-thumb"; th.alt = ""; th.loading = "lazy"; th.referrerPolicy = "no-referrer";
+                th.src = galUrl(it, 160);
+                td0.appendChild(th);
+                tr.appendChild(td0);
+                [["title", "Tytuł / podpis", 160], ["album", "Album", 80], ["year", "Rok", 10]].forEach(function (f) {
+                    var td = el("td");
+                    var inp = document.createElement("input");
+                    inp.type = "text"; inp.value = it[f[0]] || ""; inp.maxLength = f[2]; inp.placeholder = f[1];
+                    inp.setAttribute("aria-label", f[1]);
+                    if (f[0] === "year") inp.className = "g-year";
+                    inp.addEventListener("change", function () { it[f[0]] = inp.value.trim(); commit(); });
+                    td.appendChild(inp);
+                    tr.appendChild(td);
+                });
+                var tdA = el("td", "acts");
+                var del = el("button", "sbtn danger", "Usuń");
+                del.type = "button";
+                del.addEventListener("click", function () {
+                    if (!confirm("Usunąć to zdjęcie z galerii strony? (Plik na Dysku Google nie zostanie usunięty.)")) return;
+                    DATA.gallery.items.splice(idx, 1);
+                    commit();
+                    renderAdmGallery();
+                });
+                tdA.appendChild(del);
+                tr.appendChild(tdA);
+                tb.appendChild(tr);
+            });
+        }
+
+        function yearFromDrive(f, album) {
+            var re = /\b(1[5-9]\d\d|20[0-3]\d)\b/;
+            var m = re.exec(f.name || "") || re.exec(album || "");
+            if (m) return m[1];
+            var t = f.imageMediaMetadata && f.imageMediaMetadata.time;
+            m = /^(\d{4})/.exec(t || "");
+            return m ? m[1] : "";
+        }
+        function titleFromName(name) {
+            var t = (name || "").replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim();
+            if (/^(IMG|DSC|DSCN|PXL|MVIMG|P|Screenshot|Zrzut)[ _-]?\d/i.test(t) || /^\d{6,}/.test(t)) return "";
+            return t.slice(0, 160);
+        }
+
+        function syncGallery() {
+            var fid = F.driveFolderId(DATA.gallery.folderUrl), key = ($("gKey").value || "").trim();
+            if (!fid) { gStatus("Najpierw wpisz link do folderu na Dysku Google.", "err"); return; }
+            if (!key) { gStatus("Do synchronizacji potrzebny jest klucz API Dysku Google (instrukcja poniżej). Zdjęcia możesz też dodać ręcznie.", "err"); return; }
+            lsSet(LS_GKEY, key);
+            gStatus("Pobieram listę zdjęć z folderu…");
+            $("gSync").disabled = true;
+            var found = [];
+
+            function listFolder(id, album, depth) {
+                function page(token) {
+                    var url = "https://www.googleapis.com/drive/v3/files?q=" + encodeURIComponent("'" + id + "' in parents and trashed=false") +
+                        "&fields=" + encodeURIComponent("nextPageToken,files(id,name,mimeType,description,imageMediaMetadata(time))") +
+                        "&pageSize=1000&orderBy=name&supportsAllDrives=true&includeItemsFromAllDrives=true&key=" + encodeURIComponent(key) +
+                        (token ? "&pageToken=" + encodeURIComponent(token) : "");
+                    return fetch(url).then(function (r) {
+                        return r.json().then(function (j) {
+                            if (!r.ok) { var e = new Error((j.error && j.error.message) || ("HTTP " + r.status)); e.status = r.status; throw e; }
+                            return j;
+                        });
+                    }).then(function (j) {
+                        var subs = [];
+                        (j.files || []).forEach(function (f) {
+                            if (f.mimeType === "application/vnd.google-apps.folder") { if (depth < 3) subs.push(f); }
+                            else if (/^image\//.test(f.mimeType || "")) {
+                                found.push({ id: f.id, name: f.name, desc: f.description || "", album: album, year: yearFromDrive(f, album) });
+                            }
+                        });
+                        var next = j.nextPageToken ? page(j.nextPageToken) : Promise.resolve();
+                        return next.then(function () {
+                            return subs.reduce(function (p, f) {
+                                return p.then(function () { return listFolder(f.id, album ? album + " / " + f.name : f.name, depth + 1); });
+                            }, Promise.resolve());
+                        });
+                    });
+                }
+                return page("");
+            }
+
+            listFolder(fid, "", 0).then(function () {
+                var existing = {};
+                DATA.gallery.items.forEach(function (it) { if (it.id) existing[it.id] = it; });
+                var seen = {}, kept = [], added = 0;
+                found.forEach(function (f) {
+                    if (seen[f.id]) return;
+                    seen[f.id] = true;
+                    if (existing[f.id]) kept.push(existing[f.id]);              // zachowujemy poprawione podpisy
+                    else { kept.push({ id: f.id, url: "", title: titleFromName(f.name), album: f.album, year: f.year, desc: f.desc.slice(0, 300), manual: false }); added++; }
+                });
+                var removed = 0;
+                var rest = DATA.gallery.items.filter(function (it) {
+                    if (it.id && !seen[it.id] && !it.manual) { removed++; return false; }
+                    return !(it.id && seen[it.id]);
+                });
+                DATA.gallery.items = kept.concat(rest);
+                commit();
+                renderAdmGallery();
+                gStatus("Gotowe: znaleziono " + found.length + " " + plFoto(found.length) + " (nowe: " + added + ", usunięte: " + removed + "). Pamiętaj o wyeksportowaniu danych.", "ok");
+            }).catch(function (err) {
+                var m = err && err.message ? err.message : "";
+                if (err && err.status === 400) m = "Klucz API jest nieprawidłowy. (" + m + ")";
+                else if (err && err.status === 403) m = "Dostęp zabroniony – włącz „Google Drive API” w projekcie klucza i sprawdź ograniczenia klucza. (" + m + ")";
+                else if (err && err.status === 404) m = "Nie znaleziono folderu – sprawdź link i czy folder jest udostępniony („Każda osoba mająca link”). (" + m + ")";
+                else if (!err || !err.status) m = "Nie udało się połączyć z Dyskiem Google (brak internetu lub blokada przeglądarki). " + m;
+                gStatus(m, "err");
+            }).then(function () { $("gSync").disabled = false; });
+        }
+
+        $("tabPeople").addEventListener("click", function () { showAdmTab("people"); });
+        $("tabGallery").addEventListener("click", function () { showAdmTab("gallery"); });
+        $("abGallery").addEventListener("click", function () { admTab = "gallery"; showList(); });
+        $("gSync").addEventListener("click", syncGallery);
+        $("gKey").addEventListener("change", function () { lsSet(LS_GKEY, this.value.trim()); });
+        $("gFolder").addEventListener("change", function () {
+            var v = this.value.trim();
+            var clean = v ? F.safeFolderUrl(v) : "";
+            if (v && !clean) { alert("To nie wygląda na link do folderu Dysku Google (powinien zawierać „/folders/…”)."); this.value = DATA.gallery.folderUrl || ""; return; }
+            DATA.gallery.folderUrl = clean;
+            this.value = clean;
+            commit();
+        });
+        $("gAddBtn").addEventListener("click", function () { $("gAddBox").hidden = !$("gAddBox").hidden; if (!$("gAddBox").hidden) $("gaLink").focus(); });
+        $("gaCancel").addEventListener("click", function () { $("gAddBox").hidden = true; });
+        $("gaSave").addEventListener("click", function () {
+            var link = $("gaLink").value.trim();
+            if (/\/folders\//.test(link)) { alert("To jest link do folderu. Wklej link do pojedynczego zdjęcia albo użyj „Synchronizuj z folderem”."); return; }
+            var id = F.driveFileId(link), url = id ? "" : F.safeUrl(link);
+            if (!id && !url) { alert("Wklej link do zdjęcia z Dysku Google („Udostępnij → Kopiuj link”) albo ścieżkę do pliku, np. galeria/foto.jpg."); return; }
+            DATA.gallery.items.push({
+                id: id, url: url, title: $("gaTitle").value.trim().slice(0, 160), album: $("gaAlbum").value.trim().slice(0, 80),
+                year: $("gaYear").value.trim().slice(0, 10), desc: "", manual: true
+            });
+            ["gaLink", "gaTitle", "gaAlbum", "gaYear"].forEach(function (k) { $(k).value = ""; });
+            $("gAddBox").hidden = true;
+            commit();
+            renderAdmGallery();
+        });
+
         /* działania na wybranej osobie (w profilu) */
         function selected() { return M.byId[state.selId]; }
         $("paEdit").addEventListener("click", function () {
@@ -2775,6 +3333,7 @@
 
         document.addEventListener("keydown", function (e) {
             if (e.key !== "Escape") return;
+            if (!lbBox.hidden) { lbClose(); return; }
             if (!cropBox.hidden) { closeCrop(); return; }
             if (!modal.hidden) { closeModal(); return; }
             if (panel.classList.contains("open")) {
@@ -2786,13 +3345,44 @@
 
         /* ---------- start ---------- */
         if (admin) document.body.classList.add("admin");
+        /* ---------- wskazanie osoby w drzewie (link ze strony „Wszystkie biografie”: index.html?osoba=ID) ---------- */
+        function pulseNode(id) {
+            var nodes = svg.querySelectorAll('.node[data-id="' + id + '"]');
+            Array.prototype.forEach.call(nodes, function (n) {
+                n.setAttribute("class", n.getAttribute("class") + " pulse");
+                setTimeout(function () { n.setAttribute("class", n.getAttribute("class").replace(" pulse", "")); }, 3000);
+            });
+        }
+        function pointToPerson(id) {
+            var p = M.byId[id];
+            if (!p) return;
+            document.getElementById("drzewo").scrollIntoView();
+            if (p.depth != null) {                           // przodek: pokazujemy w widoku całego drzewa
+                if (state.view !== "pedigree") showPedigree();
+                if (p.depth > state.gen) { state.gen = p.depth; $("genSel").value = String(state.gen); }
+                select(p.id, { stay: true });
+            } else {                                         // osoba spoza linii przodków: gałąź najbliższego przodka
+                var a = p, guard = 0;
+                while (a && a.depth == null && guard++ < 60) a = a.father || a.mother;
+                select((a || p).id);
+                if (a && a !== p) select(p.id, { stay: true });
+            }
+            pulseNode(p.id);
+        }
+
         fillGenSelect();
         fillSearch();
         renderBioStrip();
+        renderGalStrip();
         render();
         syncToolbar();
         startView();
         updateAdminBar();
+        var wanted = /[?&]osoba=(\d+)/.exec(location.search);
+        if (wanted) {
+            try { history.replaceState(null, "", location.pathname + "#drzewo"); } catch (e) {}
+            pointToPerson(Number(wanted[1]));
+        }
         if (location.hash === "#admin") enterAdmin();
     })();
     </script>
